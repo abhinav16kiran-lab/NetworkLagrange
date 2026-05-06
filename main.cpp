@@ -5,6 +5,26 @@
 #include <vector>
 #include <string>
 #include "optimizer.hpp"
+#include <fstream>
+
+void save_to_geojson(const std::vector<Node>& cities, const Server& best, const std::string& filename) {
+    std::ofstream out(filename);
+    out << "{\n  \"type\": \"FeatureCollection\",\n  \"features\": [\n";
+
+    // 1. Add the Optimized Server Point
+    out << "    {\n      \"type\": \"Feature\",\n      \"properties\": { \"name\": \"OPTIMIZED_SERVER\", \"marker-color\": \"#ff0000\" },\n"
+        << "      \"geometry\": { \"type\": \"Point\", \"coordinates\": [" << best.lon << ", " << best.lat << "] }\n    }";
+
+    // 2. Add the Input Cities
+    for (const auto& city : cities) {
+        out << ",\n    {\n      \"type\": \"Feature\",\n      \"properties\": { \"weight\": " << city.weight << " },\n"
+            << "      \"geometry\": { \"type\": \"Point\", \"coordinates\": [" << city.lon << ", " << city.lat << "] }\n    }";
+    }
+
+    out << "\n  ]\n}";
+    out.close();
+    std::cout << "Results saved to " << filename << std::endl;
+}
 
 int main() {
     std::vector<Node> cities;
@@ -47,6 +67,7 @@ int main() {
 
     auto start = std::chrono::high_resolution_clock::now();
     Server best = optimizer.find_optimal_server();
+    save_to_geojson(cities, best, "map_result.geojson");
     auto end   = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
